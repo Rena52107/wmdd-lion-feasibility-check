@@ -1,44 +1,47 @@
-import { useState, useEffect } from 'react';
-import MapView, { Polyline } from 'react-native-maps';
-import { Button, StyleSheet, View } from 'react-native';
-
-import * as Location from 'expo-location';
+import React from 'react';
+import { useState } from 'react';
+import { StyleSheet, View, Button, TextInput } from 'react-native';
+import { WebView } from 'react-native-webview';
+import mapTemplate from './map-template';
 
 export default function App() {
+  let webRef = undefined;
+  let [mapCenter, setMapCenter] = useState('-121.913, 37.361');
+  const onButtonPress = () => {
+    const [lng, lat] = mapCenter.split(',');
+    webRef.injectJavaScript(
+      `map.setCenter([ ${parseFloat(lng)} , ${parseFloat(lat)} ])`
+    );
+  };
+
+  const handleMapEvent = (event) => {
+    setMapCenter(event.nativeEvent.data);
+  };
   return (
     <View style={styles.container}>
-      <MapView style={styles.map}>
-        <Polyline
-          coordinates={[
-            { latitude: 37.8025259, longitude: -122.4351431 },
-            { latitude: 37.7896386, longitude: -122.421646 },
-            { latitude: 37.7665248, longitude: -122.4161628 },
-            { latitude: 37.7734153, longitude: -122.4577787 },
-            { latitude: 37.7948605, longitude: -122.4596065 },
-            { latitude: 37.8025259, longitude: -122.4351431 },
-          ]}
-          strokeColor='#000' // fallback for when `strokeColors` is not supported by the map-provider
-          strokeColors={[
-            '#7F0000',
-            '#00000000', // no color, creates a "long" gradient between the previous and next coordinate
-            '#B24112',
-            '#E5845C',
-            '#238C23',
-            '#7F0000',
-          ]}
-          strokeWidth={6}
+      <View style={styles.buttons}>
+        <TextInput
+          style={styles.textInput}
+          onChangeText={setMapCenter}
+          value={mapCenter}
         />
-      </MapView>
+        <Button
+          title='Set Center'
+          onPress={onButtonPress}
+        />
+      </View>
+      <WebView
+        ref={(r) => (webRef = r)}
+        onMessage={handleMapEvent}
+        style={styles.map}
+        originWhitelist={['*']}
+        source={{ html: mapTemplate }}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    width: '100%',
-    height: '100%',
-  },
+  container: { flex: 1 },
+  map: { width: '100%', height: '100%' },
 });
